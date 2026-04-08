@@ -14,7 +14,7 @@ public class MessageController : BaseController
     }
 
     [HttpPost("CreateTopic")]
-    public async Task<IActionResult> CreateTopic([FromBody]string name, int amount)
+    public async Task<IActionResult> CreateTopic([FromQuery]string name, [FromQuery]int amount)
     {
         if (amount < 1)
         {
@@ -32,7 +32,7 @@ public class MessageController : BaseController
     }
         
     [HttpPost("Subscribe")]
-    public async Task<IActionResult> Subscribe([FromBody]int topicID, int consumerID)
+    public async Task<IActionResult> Subscribe([FromQuery]int topicID, [FromQuery]int consumerID)
     {
         if (topicID < 1 || consumerID < 1)
         {
@@ -44,7 +44,7 @@ public class MessageController : BaseController
 
     }
     [HttpPost("Publish")]
-    public async Task<IActionResult> Publish([FromBody] int topicID, int pubID, string payload)
+    public async Task<IActionResult> Publish([FromQuery] int topicID, [FromQuery]int pubID, [FromQuery]string payload)
     {
         if (topicID < 1 || pubID < 1)
         return BadRequest("Invalid ids");
