@@ -88,14 +88,14 @@ public class MessageController : BaseController
     [HttpGet("Consume")]
     public IActionResult Consume([FromQuery] ConsumeRequest request)
     {
-        if (request.TopicID < 1 || request.ConsumerID < 1)
+        if (string.IsNullOrWhiteSpace(request.TopicName) || request.ConsumerID < 1)
         {
             return BadRequest("Invalid ids");
         }
 
         try
         {
-            var msg = deliveryService.Consume(request.TopicID, request.ConsumerID);
+            var msg = deliveryService.Consume(request.TopicName, request.ConsumerID);
             if (msg is null) return NoContent();
             return Ok(msg);
         }
@@ -134,3 +134,4 @@ public class MessageController : BaseController
         return Ok();
     }
 }
+

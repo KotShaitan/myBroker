@@ -19,7 +19,7 @@ public class PublishRequest
 
 public class ConsumeRequest
 {
-    public int TopicID { get; set; }
+    public string TopicName { get; set; } = string.Empty;
     public int ConsumerID { get; set; }
 }
 
@@ -33,3 +33,4 @@ public class DeleteTopicRequest
 {
     public int TopicID { get; set; }
 }
+

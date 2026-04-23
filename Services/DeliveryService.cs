@@ -6,10 +6,10 @@ public class DeliveryService
 
     private readonly Dictionary<int, int> _nextQueueByTopic = new();
 
-     private readonly Dictionary<(int topicId, int consumerId, int queueId), int> _offsets = new();
+    private readonly Dictionary<(int topicId, int consumerId, int queueId), int> _offsets = new();
     private readonly Dictionary<(int topicId, int consumerId), int> _nextQueueForConsumer = new();
 
-    public DeliveryService(TopicService topicService, FileManager fileManager, SubscribeService subscribeService )
+    public DeliveryService(TopicService topicService, FileManager fileManager, SubscribeService subscribeService)
     {
         _topicService = topicService;
         _fileManager = fileManager;
@@ -21,43 +21,46 @@ public class DeliveryService
         if (string.IsNullOrWhiteSpace(payload))
             throw new ArgumentException("Payload is empty");
 
-            var topic = _topicService.GetById(topicId)
-                        ?? throw new KeyNotFoundException("Topic not found");
-
-            if (topic.Queues.Count == 0)
-                throw new InvalidOperationException("Topic has no queues");
-
-            var next = _nextQueueByTopic.TryGetValue(topicId, out var i) ? i : 0;
-            var queueIndex = next % topic.Queues.Count;
-            _nextQueueByTopic[topicId] = (queueIndex + 1) % topic.Queues.Count;
-
-            var queue = topic.Queues[queueIndex];
-
-            int nextMessageId = _topicService
-                .GetAll()
-                .SelectMany(t => t.Queues)
-                .SelectMany(q => q.Messages)
-                .DefaultIfEmpty(new Message { ID = 0 })
-                .Max(m => m.ID) + 1;
-
-            var message = new Message
-            {
-                ID = nextMessageId,
-                TopicID = topicId,
-                PubID = publisherId,
-                Payload = payload
-            };
-
-            queue.Messages.Add(message);
-
-            await _fileManager.SaveTopicsAsync(_topicService.GetAll().ToList());
-
-            return message;
-    }
-    public  Message? Consume(int topicId, int consumerId)
-    {
         var topic = _topicService.GetById(topicId)
                     ?? throw new KeyNotFoundException("Topic not found");
+
+        if (topic.Queues.Count == 0)
+            throw new InvalidOperationException("Topic has no queues");
+
+        var next = _nextQueueByTopic.TryGetValue(topicId, out var i) ? i : 0;
+        var queueIndex = next % topic.Queues.Count;
+        _nextQueueByTopic[topicId] = (queueIndex + 1) % topic.Queues.Count;
+
+        var queue = topic.Queues[queueIndex];
+
+        int nextMessageId = _topicService
+            .GetAll()
+            .SelectMany(t => t.Queues)
+            .SelectMany(q => q.Messages)
+            .DefaultIfEmpty(new Message { ID = 0 })
+            .Max(m => m.ID) + 1;
+
+        var message = new Message
+        {
+            ID = nextMessageId,
+            TopicID = topicId,
+            PubID = publisherId,
+            Payload = payload
+        };
+
+        queue.Messages.Add(message);
+
+        await _fileManager.SaveTopicsAsync(_topicService.GetAll().ToList());
+
+        return message;
+    }
+
+    public Message? Consume(string topicName, int consumerId)
+    {
+        var topic = _topicService.GetByName(topicName)
+                    ?? throw new KeyNotFoundException("Topic not found");
+
+        var topicId = topic.ID;
 
         if (!_subscribeService.IsSubscribed(topicId, consumerId))
             throw new InvalidOperationException("Consumer is not subscribed");
