@@ -4,7 +4,6 @@ public class DeliveryService
     private readonly FileManager _fileManager;
     private readonly SubscribeService _subscribeService;
 
-    // topicId -> next queue index (round-robin)
     private readonly Dictionary<int, int> _nextQueueByTopic = new();
 
      private readonly Dictionary<(int topicId, int consumerId, int queueId), int> _offsets = new();
@@ -55,7 +54,7 @@ public class DeliveryService
 
             return message;
     }
-    public async Task<Message?> ConsumeAsync(int topicId, int consumerId)
+    public  Message? Consume(int topicId, int consumerId)
     {
         var topic = _topicService.GetById(topicId)
                     ?? throw new KeyNotFoundException("Topic not found");

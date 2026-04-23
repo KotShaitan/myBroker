@@ -23,7 +23,12 @@ public class Topic
     {
         if (Queues.Count > 0)
         {    
-            Queues.RemoveAt(Queues.Count - 1);
+            if (Queues[Queues.Count - 1].Messages.Count == 0) {
+                Queues.RemoveAt(Queues.Count - 1);
+            }
+            else           {
+                throw new InvalidOperationException("Невозможно удалить очередь, так как она содержит сообщения");
+            }
         }
     }
 }

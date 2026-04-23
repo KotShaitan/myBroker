@@ -14,79 +14,123 @@ public class MessageController : BaseController
     }
 
     [HttpPost("CreateTopic")]
-    public async Task<IActionResult> CreateTopic([FromQuery]string name, [FromQuery]int amount)
+    public async Task<IActionResult> CreateTopic([FromBody] CreateTopicRequest request)
     {
-        if (amount < 1)
+        if (string.IsNullOrWhiteSpace(request.Name) || request.Amount < 1)
         {
-            return BadRequest("количество должно быть > 0");
+            return BadRequest("Topic name is required and amount must be > 0");
         }
+
         try
         {
-            await topicService.CreateTopic(name, amount);
+            await topicService.CreateTopic(request.Name, request.Amount);
             return Ok();
         }
         catch (Exception ex)
         {
-            return BadRequest(ex);
+            return BadRequest(ex.Message);
         }
     }
-        
+
     [HttpPost("Subscribe")]
-    public async Task<IActionResult> Subscribe([FromQuery]int topicID, [FromQuery]int consumerID)
+    public async Task<IActionResult> Subscribe([FromBody] SubscribeRequest request)
     {
-        if (topicID < 1 || consumerID < 1)
+        if (string.IsNullOrWhiteSpace(request.TopicName) || request.ConsumerID < 1)
         {
-            return BadRequest("ID не может быть < 1");
+            return BadRequest("Topic name and consumer id are required");
         }
-        if (topicService.GetById(topicID) is null) return NotFound("Topic not found");
-        await subscribeService.Subscribe(topicID, consumerID);
-        return Ok();
-
-    }
-    [HttpPost("Publish")]
-    public async Task<IActionResult> Publish([FromQuery] int topicID, [FromQuery]int pubID, [FromQuery]string payload)
-    {
-        if (topicID < 1 || pubID < 1)
-        return BadRequest("Invalid ids");
-    
-    var msg = await deliveryService.PublishAsync(
-        topicID,
-        pubID,
-        payload);
-
-    return Ok(new
-    {
-        msg.ID,
-        msg.TopicID,
-        msg.PubID,
-        msg.Time
-    });
-    
-    }
-
-    [HttpGet("Consume")]
-    public async Task<IActionResult> Consume([FromQuery] int topicID, [FromQuery] int consumerID)
-    {
-        if (topicID < 1 || consumerID < 1)
-            return BadRequest("Invalid ids");
 
         try
         {
-            var msg = await deliveryService.ConsumeAsync(topicID, consumerID);
+            await subscribeService.Subscribe(request.TopicName, request.ConsumerID);
+            return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpPost("Publish")]
+    public async Task<IActionResult> Publish([FromBody] PublishRequest request)
+    {
+        if (request.TopicID < 1 || request.PubID < 1)
+        {
+            return BadRequest("Invalid ids");
+        }
+
+        try
+        {
+            var msg = await deliveryService.PublishAsync(request.TopicID, request.PubID, request.Payload);
+
+            return Ok(new
+            {
+                msg.ID,
+                msg.TopicID,
+                msg.PubID,
+                msg.Time
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("Consume")]
+    public IActionResult Consume([FromQuery] ConsumeRequest request)
+    {
+        if (request.TopicID < 1 || request.ConsumerID < 1)
+        {
+            return BadRequest("Invalid ids");
+        }
+
+        try
+        {
+            var msg = deliveryService.Consume(request.TopicID, request.ConsumerID);
             if (msg is null) return NoContent();
             return Ok(msg);
         }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return Conflict(ex.Message); }
     }
-    /*
+
     [HttpPatch("EditTopic")]
-    public async Task<IActionResult> EditTopic([FromBody]int amount)
+    public async Task<IActionResult> EditTopic([FromBody] EditTopicRequest request)
     {
-        if (amount < 0)
+        if (request.TopicID < 1)
         {
-            return BadRequest("количество не может быть меньше 0");
+            return BadRequest("Topic id must be > 0");
         }
-    } 
-    */
+
+        if (request.Amount < 0)
+        {
+            return BadRequest("Amount cannot be less than 0");
+        }
+
+        await topicService.EditTopic(request.TopicID, request.Amount);
+        return Ok();
+    }
+
+    [HttpDelete("DeleteTopic")]
+    public async Task<IActionResult> DeleteTopic([FromBody] DeleteTopicRequest request)
+    {
+        if (request.TopicID < 1)
+        {
+            return BadRequest("ID cannot be < 1");
+        }
+
+        var topic = topicService.GetById(request.TopicID);
+        if (topic is null) return NotFound("Topic not found");
+        await topicService.RemoveTopic(request.TopicID);
+        return Ok();
+    }
 }

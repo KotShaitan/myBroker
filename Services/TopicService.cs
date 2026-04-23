@@ -31,12 +31,56 @@ public class TopicService
         }
         return null;
     }
+    public Topic? GetByName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        var normalizedName = name.Trim();
+        return _topics.FirstOrDefault(t => t.Name.Equals(normalizedName, StringComparison.OrdinalIgnoreCase));
+    }
     public IReadOnlyList<Topic> GetAll()
     {
         return _topics.AsReadOnly();
     }
-    public async Task EditTopic(int amount)
+    public async Task EditTopic(int topicID, int? amount)
     {
-        
+        var topic = GetById(topicID);
+
+        if (topic is null) return;
+
+        if (amount is not null)
+        {
+            if (amount > _topics.Count)
+            {
+                for (int i=0; i < amount - _topics.Count; i++)
+                {
+                    topic.AddQueue();
+                }
+            }
+            else
+            {
+                for (int i=0; i < _topics.Count - amount; i++)
+                {
+                    topic.RemoveQueue();
+                }
+            }
+            
+            for (int i=0; i < amount; i++)
+            {
+                topic.AddQueue();
+            }
+        }
+        await _fileManager.SaveTopicsAsync(_topics);
+    }
+    public async Task RemoveTopic(int topicID)
+    {
+        var topic = GetById(topicID);
+        if (topic is null) return;
+        _topics.Remove(topic);
+        await _fileManager.SaveTopicsAsync(_topics);
     }
 }
+
