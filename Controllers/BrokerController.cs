@@ -54,14 +54,37 @@ public class MessageController : BaseController
     [HttpPost("Publish")]
     public async Task<IActionResult> Publish([FromBody] PublishRequest request)
     {
-        if (request.TopicID < 1 || request.PubID < 1)
+        if (request.PubID < 1)
         {
             return BadRequest("Invalid ids");
         }
 
+        int topicId;
+        if (request.TopicID is not null)
+        {
+            if (request.TopicID < 1)
+            {
+                return BadRequest("Invalid topic id");
+            }
+            topicId = request.TopicID.Value;
+        }
+        else if (!string.IsNullOrWhiteSpace(request.TopicName))
+        {
+            var topic = topicService.GetByName(request.TopicName);
+            if (topic is null)
+            {
+                return NotFound("Topic not found");
+            }
+            topicId = topic.ID;
+        }
+        else
+        {
+            return BadRequest("TopicID or TopicName is required");
+        }
+
         try
         {
-            var msg = await deliveryService.PublishAsync(request.TopicID, request.PubID, request.Payload);
+            var msg = await deliveryService.PublishAsync(topicId, request.PubID, request.Payload);
 
             return Ok(new
             {

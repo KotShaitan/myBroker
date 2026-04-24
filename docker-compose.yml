@@ -1,0 +1,14 @@
+services:
+  mybroker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mybroker
+    ports:
+      - "8000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+    volumes:
+      - ./Data:/app/Data
+    restart: unless-stopped

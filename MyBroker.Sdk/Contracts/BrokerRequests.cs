@@ -1,16 +1,18 @@
-public class CreateTopicRequest
+namespace MyBroker.Sdk.Contracts;
+
+public sealed class CreateTopicRequest
 {
     public string Name { get; set; } = string.Empty;
     public int Amount { get; set; }
 }
 
-public class SubscribeRequest
+public sealed class SubscribeRequest
 {
     public string TopicName { get; set; } = string.Empty;
     public int ConsumerID { get; set; }
 }
 
-public class PublishRequest
+public sealed class PublishRequest
 {
     public int? TopicID { get; set; }
     public string? TopicName { get; set; }
@@ -18,19 +20,13 @@ public class PublishRequest
     public string Payload { get; set; } = string.Empty;
 }
 
-public class ConsumeRequest
-{
-    public string TopicName { get; set; } = string.Empty;
-    public int ConsumerID { get; set; }
-}
-
-public class EditTopicRequest
+public sealed class EditTopicRequest
 {
     public int TopicID { get; set; }
     public int? Amount { get; set; }
 }
 
-public class DeleteTopicRequest
+public sealed class DeleteTopicRequest
 {
     public int TopicID { get; set; }
 }
