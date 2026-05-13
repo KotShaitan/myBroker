@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Brokercomparrison")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b1bdd56ea3521469208ac502aa848d3f44ed7305")]
 [assembly: System.Reflection.AssemblyProductAttribute("Brokercomparrison")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Brokercomparrison")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\Practice\\Practice2\\BrokerComparrison\\Brokercomparrison.csproj": {}
+    "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\practice\\practice2\\brokercomparrison\\Brokercomparrison.csproj": {}
   },
   "projects": {
-    "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\Practice\\Practice2\\BrokerComparrison\\Brokercomparrison.csproj": {
+    "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\practice\\practice2\\brokercomparrison\\Brokercomparrison.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\Practice\\Practice2\\BrokerComparrison\\Brokercomparrison.csproj",
+        "projectUniqueName": "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\practice\\practice2\\brokercomparrison\\Brokercomparrison.csproj",
         "projectName": "Brokercomparrison",
-        "projectPath": "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\Practice\\Practice2\\BrokerComparrison\\Brokercomparrison.csproj",
+        "projectPath": "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\practice\\practice2\\brokercomparrison\\Brokercomparrison.csproj",
         "packagesPath": "C:\\Users\\kot_shaitan\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\Practice\\Practice2\\BrokerComparrison\\obj\\",
+        "outputPath": "C:\\Users\\kot_shaitan\\Desktop\\DotNetPractice\\practice\\practice2\\brokercomparrison\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
