@@ -1,0 +1,47 @@
+services:
+  mybroker:
+    volumes:
+      - broker_demo_data:/app/Data
+
+  producer:
+    build:
+      context: .
+      dockerfile: DemoServices/ProducerService/Dockerfile
+    environment:
+      BROKER_URL: http://mybroker:8080/
+      TOPIC_NAME: demo-topic
+      QUEUE_COUNT: 2
+      MESSAGE_COUNT: 10
+      PUBLISH_DELAY_MS: 200
+      PUBLISHER_ID: 5001
+    depends_on:
+      - mybroker
+
+  consumer-a:
+    build:
+      context: .
+      dockerfile: DemoServices/ConsumerServiceA/Dockerfile
+    environment:
+      SERVICE_NAME: consumer-a
+      BROKER_URL: http://mybroker:8080/
+      TOPIC_NAME: demo-topic
+      CONSUMER_ID: 101
+      EXPECTED_COUNT: 10
+    depends_on:
+      - mybroker
+
+  consumer-b:
+    build:
+      context: .
+      dockerfile: DemoServices/ConsumerServiceB/Dockerfile
+    environment:
+      SERVICE_NAME: consumer-b
+      BROKER_URL: http://mybroker:8080/
+      TOPIC_NAME: demo-topic
+      CONSUMER_ID: 102
+      EXPECTED_COUNT: 10
+    depends_on:
+      - mybroker
+
+volumes:
+  broker_demo_data:

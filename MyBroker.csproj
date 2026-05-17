@@ -14,6 +14,7 @@
   <ItemGroup>
     <Compile Remove="MyBroker.Sdk\**\*.cs" />
     <Compile Remove="TestBroker\**\*.cs" />
+    <Compile Remove="DemoServices\**\*.cs" />
   </ItemGroup>
 
 </Project>

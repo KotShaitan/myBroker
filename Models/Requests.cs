@@ -24,6 +24,14 @@ public class ConsumeRequest
     public int ConsumerID { get; set; }
 }
 
+public class AckRequest
+{
+    public string TopicName { get; set; } = string.Empty;
+    public int ConsumerID { get; set; }
+    public int MessageID { get; set; }
+    public bool Success { get; set; } = true;
+}
+
 public class EditTopicRequest
 {
     public int TopicID { get; set; }

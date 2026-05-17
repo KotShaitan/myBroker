@@ -20,6 +20,14 @@ public sealed class PublishRequest
     public string Payload { get; set; } = string.Empty;
 }
 
+public sealed class AckRequest
+{
+    public string TopicName { get; set; } = string.Empty;
+    public int ConsumerID { get; set; }
+    public int MessageID { get; set; }
+    public bool Success { get; set; } = true;
+}
+
 public sealed class EditTopicRequest
 {
     public int TopicID { get; set; }

@@ -126,6 +126,48 @@ public class MessageController : BaseController
         catch (InvalidOperationException ex) { return Conflict(ex.Message); }
     }
 
+    [HttpPost("Ack")]
+    public async Task<IActionResult> Ack([FromBody] AckRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TopicName) || request.ConsumerID < 1 || request.MessageID < 1)
+        {
+            return BadRequest("Invalid ack request");
+        }
+
+        try
+        {
+            var acked = await deliveryService.AckAsync(request.TopicName, request.ConsumerID, request.MessageID, request.Success);
+            if (!acked)
+            {
+                return NotFound("Pending message not found for ack");
+            }
+            return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpGet("Dlq")]
+    public IActionResult GetDlq([FromQuery] string topicName, [FromQuery] int consumerID)
+    {
+        if (string.IsNullOrWhiteSpace(topicName) || consumerID < 1)
+        {
+            return BadRequest("Invalid request");
+        }
+
+        try
+        {
+            var messages = deliveryService.GetDeadLetters(topicName, consumerID);
+            return Ok(messages);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
     [HttpPatch("EditTopic")]
     public async Task<IActionResult> EditTopic([FromBody] EditTopicRequest request)
     {
@@ -157,4 +199,3 @@ public class MessageController : BaseController
         return Ok();
     }
 }
-

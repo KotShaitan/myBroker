@@ -9,5 +9,4 @@
 *.suo
 *.md
 MyBroker.sln
-MyBroker.Sdk/
 TestBroker/

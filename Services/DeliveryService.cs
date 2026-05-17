@@ -5,9 +5,21 @@ public class DeliveryService
     private readonly SubscribeService _subscribeService;
 
     private readonly Dictionary<int, int> _nextQueueByTopic = new();
-
     private readonly Dictionary<(int topicId, int consumerId, int queueId), int> _offsets = new();
     private readonly Dictionary<(int topicId, int consumerId), int> _nextQueueForConsumer = new();
+
+    private readonly Dictionary<(int topicId, int consumerId), PendingDelivery> _pending = new();
+    private readonly Dictionary<(int topicId, int consumerId), List<Message>> _deadLetter = new();
+
+    private const int MaxAttempts = 3;
+    private static readonly TimeSpan AckTimeout = TimeSpan.FromSeconds(20);
+
+    private sealed class PendingDelivery
+    {
+        public required Message Message { get; init; }
+        public required int QueueID { get; init; }
+        public required DateTime ExpireAtUtc { get; init; }
+    }
 
     public DeliveryService(TopicService topicService, FileManager fileManager, SubscribeService subscribeService)
     {
@@ -45,7 +57,8 @@ public class DeliveryService
             ID = nextMessageId,
             TopicID = topicId,
             PubID = publisherId,
-            Payload = payload
+            Payload = payload,
+            DeliveryAttempts = 0
         };
 
         queue.Messages.Add(message);
@@ -65,6 +78,13 @@ public class DeliveryService
         if (!_subscribeService.IsSubscribed(topicId, consumerId))
             throw new InvalidOperationException("Consumer is not subscribed");
 
+        HandlePendingTimeout(topic, topicId, consumerId);
+
+        if (_pending.ContainsKey((topicId, consumerId)))
+        {
+            return null;
+        }
+
         if (topic.Queues.Count == 0)
             return null;
 
@@ -82,12 +102,109 @@ public class DeliveryService
             if (offset < queue.Messages.Count)
             {
                 var msg = queue.Messages[offset];
-                _offsets[offsetKey] = offset + 1;
+
+                _pending[(topicId, consumerId)] = new PendingDelivery
+                {
+                    Message = msg,
+                    QueueID = queue.QueueID,
+                    ExpireAtUtc = DateTime.UtcNow + AckTimeout
+                };
+
                 _nextQueueForConsumer[consumerKey] = (qIndex + 1) % topic.Queues.Count;
                 return msg;
             }
         }
 
         return null;
+    }
+
+    public async Task<bool> AckAsync(string topicName, int consumerId, int messageId, bool success)
+    {
+        var topic = _topicService.GetByName(topicName)
+                    ?? throw new KeyNotFoundException("Topic not found");
+
+        var topicId = topic.ID;
+        var key = (topicId, consumerId);
+
+        if (!_pending.TryGetValue(key, out var pending))
+        {
+            return false;
+        }
+
+        if (pending.Message.ID != messageId)
+        {
+            return false;
+        }
+
+        if (success)
+        {
+            AdvanceOffset(topicId, consumerId, pending.QueueID);
+            _pending.Remove(key);
+            return true;
+        }
+
+        var movedToDlq = MoveOrRetry(topicId, consumerId, pending);
+        _pending.Remove(key);
+
+        if (movedToDlq)
+        {
+            await _fileManager.SaveTopicsAsync(_topicService.GetAll().ToList());
+        }
+
+        return true;
+    }
+
+    public IReadOnlyList<Message> GetDeadLetters(string topicName, int consumerId)
+    {
+        var topic = _topicService.GetByName(topicName)
+                    ?? throw new KeyNotFoundException("Topic not found");
+
+        var key = (topic.ID, consumerId);
+        return _deadLetter.TryGetValue(key, out var list) ? list.AsReadOnly() : Array.Empty<Message>();
+    }
+
+    private void HandlePendingTimeout(Topic topic, int topicId, int consumerId)
+    {
+        var key = (topicId, consumerId);
+        if (!_pending.TryGetValue(key, out var pending))
+        {
+            return;
+        }
+
+        if (DateTime.UtcNow <= pending.ExpireAtUtc)
+        {
+            return;
+        }
+
+        MoveOrRetry(topicId, consumerId, pending);
+        _pending.Remove(key);
+    }
+
+    private bool MoveOrRetry(int topicId, int consumerId, PendingDelivery pending)
+    {
+        pending.Message.DeliveryAttempts++;
+
+        if (pending.Message.DeliveryAttempts < MaxAttempts)
+        {
+            return false;
+        }
+
+        var deadKey = (topicId, consumerId);
+        if (!_deadLetter.TryGetValue(deadKey, out var list))
+        {
+            list = new List<Message>();
+            _deadLetter[deadKey] = list;
+        }
+
+        list.Add(pending.Message);
+        AdvanceOffset(topicId, consumerId, pending.QueueID);
+        return true;
+    }
+
+    private void AdvanceOffset(int topicId, int consumerId, int queueId)
+    {
+        var offsetKey = (topicId, consumerId, queueId);
+        var current = _offsets.TryGetValue(offsetKey, out var off) ? off : 0;
+        _offsets[offsetKey] = current + 1;
     }
 }

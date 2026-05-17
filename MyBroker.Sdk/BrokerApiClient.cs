@@ -57,6 +57,24 @@ public sealed class BrokerApiClient : IBrokerApiClient
         return await response.Content.ReadFromJsonAsync<MessageDto>(JsonOptions, cancellationToken);
     }
 
+    public async Task AckAsync(AckRequest request, CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.PostAsJsonAsync("broker/Ack", request, cancellationToken);
+        await EnsureSuccessOrThrowAsync(response, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<MessageDto>> GetDlqAsync(string topicName, int consumerId, CancellationToken cancellationToken = default)
+    {
+        var encodedName = Uri.EscapeDataString(topicName);
+        var path = $"broker/Dlq?topicName={encodedName}&consumerID={consumerId}";
+
+        using var response = await _httpClient.GetAsync(path, cancellationToken);
+        await EnsureSuccessOrThrowAsync(response, cancellationToken);
+
+        var result = await response.Content.ReadFromJsonAsync<List<MessageDto>>(JsonOptions, cancellationToken);
+        return (IReadOnlyList<MessageDto>?)result ?? Array.Empty<MessageDto>();
+    }
+
     public async Task EditTopicAsync(EditTopicRequest request, CancellationToken cancellationToken = default)
     {
         using var requestMessage = new HttpRequestMessage(HttpMethod.Patch, "broker/EditTopic")
